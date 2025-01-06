@@ -1,0 +1,85 @@
+for windows: 
+. Verify the Setup
+Restart PowerShell.
+
+Check the values:
+
+powershell
+Copy code
+echo $env:GOPATH
+echo $env:Path
+Test bee:
+
+powershell
+Copy code
+bee version
+
+
+
+
+Run go mod tidy
+This command will clean up your module files, adding any missing dependencies and removing unused ones. It will also regenerate the go.sum file to include the correct entries.
+
+Run the following command:
+
+bash
+Copy code
+go mod tidy
+This will automatically resolve any missing dependencies and update your go.sum file with the required entries.
+
+2. Manually Add the Dependency
+If go mod tidy doesn't resolve the issue, you can manually fetch the required dependency using:
+
+bash
+Copy code
+go get github.com/beego/beego/v2@latest
+This should add the missing entry to both go.mod and go.sum.
+
+3. Verify Dependencies
+After running go mod tidy or go get, verify that the dependencies are correctly installed:
+
+bash
+Copy code
+go mod verify
+This ensures that all required modules are correctly fetched and the go.sum file has the proper entries.
+
+4. Rebuild the Application
+Once the dependencies are correctly resolved, you can try running your application again:
+
+bash
+Copy code
+bee run
+
+go get github.com/stretchr/testify
+
+go get github.com/jarcoal/httpmock
+go get github.com/stretchr/testify/assert
+go get github.com/beego/beego/v2/testing
+
+go get github.com/stretchr/testify/mock@v1.10.0
+go get github.com/stretchr/objx@v0.5.2
+go mod tidy
+
+go install golang.org/x/tools/cmd/cover@latest
+
+
+this 
+go test -coverprofile coverage.out ./...
+go tool cover -html coverage.out
+
+
+
+go test ./... -coverprofile=coverage.out
+
+# Display total coverage percentage
+go tool cover -func=coverage.out | grep total: | awk '{print $3}'
+
+# Generate HTML coverage report (optional)
+go tool cover -html=coverage.out -o coverage.html
+
+# Open the HTML report (optional)
+open coverage.html
+
+ go clean -testcache
+  go test -v ./tests 
+  go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
