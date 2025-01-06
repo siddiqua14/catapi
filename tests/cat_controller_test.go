@@ -3,7 +3,7 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -29,7 +29,7 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	return &http.Response{
 		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
+		Body:       io.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
 	}, nil
 }
 var (
@@ -95,7 +95,7 @@ func TestCreateVote(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 201,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
+                    Body:       io.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
                 }, nil
             },
         },
@@ -110,7 +110,7 @@ func TestCreateVote(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 400,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString("Bad Request")),
+                    Body:       io.NopCloser(bytes.NewBufferString("Bad Request")),
                 }, nil
             },
         },
@@ -170,7 +170,7 @@ func TestGetVotes(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(`[{"id": "123", "value": 1}]`)),
+                    Body:       io.NopCloser(bytes.NewBufferString(`[{"id": "123", "value": 1}]`)),
                 }, nil
             },
         },
@@ -181,7 +181,7 @@ func TestGetVotes(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 500,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error": "Internal Server Error"}`)),
+                    Body:       io.NopCloser(bytes.NewBufferString(`{"error": "Internal Server Error"}`)),
                 }, nil
             },
         },
@@ -200,7 +200,7 @@ func TestGetVotes(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{invalid json`)),
+                    Body:       io.NopCloser(bytes.NewBufferString(`{invalid json`)),
                 }, nil
             },
         },
@@ -260,7 +260,7 @@ func TestCreateFavorite(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 201,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
+                    Body:       io.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
                 }, nil
             },
         },
@@ -283,7 +283,7 @@ func TestCreateFavorite(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 500,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString("Internal Server Error")),
+                    Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
                 }, nil
             },
         },
@@ -352,7 +352,7 @@ func TestGetFavorites(t *testing.T) {
                 jsonResponse := `[{"id": 1, "image_id": "test123"}]`
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(jsonResponse)),
+                    Body:       io.NopCloser(bytes.NewBufferString(jsonResponse)),
                 }, nil
             },
         },
@@ -363,7 +363,7 @@ func TestGetFavorites(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 500,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString("Internal Server Error")),
+                    Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
                 }, nil
             },
         },
@@ -382,7 +382,7 @@ func TestGetFavorites(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString("invalid json")),
+                    Body:       io.NopCloser(bytes.NewBufferString("invalid json")),
                 }, nil
             },
         },
@@ -439,7 +439,7 @@ func TestDeleteFavorite(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
+                    Body:       io.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
                 }, nil
             },
         },
@@ -451,7 +451,7 @@ func TestDeleteFavorite(t *testing.T) {
             mockResponse: func() (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 404,
-                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{"message": "NOT_FOUND"}`)),
+                    Body:       io.NopCloser(bytes.NewBufferString(`{"message": "NOT_FOUND"}`)),
                 }, nil
             },
         },
@@ -524,7 +524,7 @@ func TestFetchBreeds_MultipleScenarios(t *testing.T) {
             DoFunc: func(req *http.Request) (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(strings.NewReader(mockResponseBody)),
+                    Body:       io.NopCloser(strings.NewReader(mockResponseBody)),
                 }, nil
             },
         }
@@ -569,7 +569,7 @@ func TestFetchBreeds_MultipleScenarios(t *testing.T) {
             DoFunc: func(req *http.Request) (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 404,
-                    Body:       ioutil.NopCloser(strings.NewReader("Not Found")),
+                    Body:       io.NopCloser(strings.NewReader("Not Found")),
                 }, nil
             },
         }
@@ -594,7 +594,7 @@ func TestFetchBreeds_MultipleScenarios(t *testing.T) {
             DoFunc: func(req *http.Request) (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(strings.NewReader(mockResponseBody)),
+                    Body:       io.NopCloser(strings.NewReader(mockResponseBody)),
                 }, nil
             },
         }
@@ -623,7 +623,7 @@ func TestFetchBreedImages_MultipleScenarios(t *testing.T) {
             DoFunc: func(req *http.Request) (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(strings.NewReader(mockResponseBody)),
+                    Body:       io.NopCloser(strings.NewReader(mockResponseBody)),
                 }, nil
             },
         }
@@ -679,7 +679,7 @@ func TestFetchBreedImages_MultipleScenarios(t *testing.T) {
                     DoFunc: func(req *http.Request) (*http.Response, error) {
                         return &http.Response{
                             StatusCode: tc.statusCode,
-                            Body:       ioutil.NopCloser(strings.NewReader("Error response")),
+                            Body:       io.NopCloser(strings.NewReader("Error response")),
                         }, nil
                     },
                 }
@@ -724,7 +724,7 @@ func TestFetchBreedImages_MultipleScenarios(t *testing.T) {
                     DoFunc: func(req *http.Request) (*http.Response, error) {
                         return &http.Response{
                             StatusCode: 200,
-                            Body:       ioutil.NopCloser(strings.NewReader(tc.mockBody)),
+                            Body:       io.NopCloser(strings.NewReader(tc.mockBody)),
                         }, nil
                     },
                 }
@@ -766,7 +766,7 @@ func TestCatController_GetCatImage(t *testing.T) {
 
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(bytes.NewBuffer(responseBody)),
+                    Body:       io.NopCloser(bytes.NewBuffer(responseBody)),
                 }, nil
             },
         }
@@ -806,7 +806,7 @@ func TestCatController_GetCatImage(t *testing.T) {
             DoFunc: func(req *http.Request) (*http.Response, error) {
                 return &http.Response{
                     StatusCode: 200,
-                    Body:       ioutil.NopCloser(strings.NewReader("[]")),
+                    Body:       io.NopCloser(strings.NewReader("[]")),
                 }, nil
             },
         }
@@ -837,7 +837,7 @@ func TestFetchCatImages(t *testing.T) {
                     DoFunc: func(req *http.Request) (*http.Response, error) {
                         return &http.Response{
                             StatusCode: 200,
-                            Body: ioutil.NopCloser(bytes.NewBufferString(`[
+                            Body: io.NopCloser(bytes.NewBufferString(`[
                                 {"url": "http://example.com/cat1.jpg"},
                                 {"url": "http://example.com/cat2.jpg"}
                             ]`)),
@@ -867,7 +867,7 @@ func TestFetchCatImages(t *testing.T) {
                     DoFunc: func(req *http.Request) (*http.Response, error) {
                         return &http.Response{
                             StatusCode: 200,
-                            Body: ioutil.NopCloser(&ErrorReader{
+                            Body: io.NopCloser(&ErrorReader{
                                 err: errors.New("read error"),
                             }),
                         }, nil
@@ -884,7 +884,7 @@ func TestFetchCatImages(t *testing.T) {
                     DoFunc: func(req *http.Request) (*http.Response, error) {
                         return &http.Response{
                             StatusCode: 500,
-                            Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error": "server error"}`)),
+                            Body:       io.NopCloser(bytes.NewBufferString(`{"error": "server error"}`)),
                         }, nil
                     },
                 }
@@ -899,7 +899,7 @@ func TestFetchCatImages(t *testing.T) {
                     DoFunc: func(req *http.Request) (*http.Response, error) {
                         return &http.Response{
                             StatusCode: 200,
-                            Body:       ioutil.NopCloser(bytes.NewBufferString(`invalid json`)),
+                            Body:       io.NopCloser(bytes.NewBufferString(`invalid json`)),
                         }, nil
                     },
                 }

@@ -1,5 +1,4 @@
 mode: set
-catapi/main.go:8.13,10.2 1 0
 catapi/controllers/cat_api.go:14.39,15.19 1 0
 catapi/controllers/cat_api.go:15.19,17.3 1 0
 catapi/controllers/cat_api.go:19.2,23.16 4 0
@@ -116,6 +115,7 @@ catapi/controllers/cat_vote.go:90.28,95.3 4 0
 catapi/controllers/cat_vote.go:97.2,98.54 2 0
 catapi/controllers/cat_vote.go:98.54,103.3 4 0
 catapi/controllers/cat_vote.go:105.2,106.15 2 0
+catapi/main.go:8.13,10.2 1 0
 catapi/routers/router.go:8.13,20.2 9 0
 catapi/controllers/cat_api.go:14.39,15.19 1 1
 catapi/controllers/cat_api.go:15.19,17.3 1 1
@@ -124,8 +124,8 @@ catapi/controllers/cat_api.go:23.16,25.3 1 1
 catapi/controllers/cat_api.go:25.8,27.3 1 1
 catapi/controllers/cat_api.go:28.2,28.25 1 1
 catapi/controllers/cat_api.go:31.43,41.9 6 1
-catapi/controllers/cat_api.go:42.29,43.26 1 1
-catapi/controllers/cat_api.go:44.26,45.59 1 0
+catapi/controllers/cat_api.go:42.29,43.26 1 0
+catapi/controllers/cat_api.go:44.26,45.59 1 1
 catapi/controllers/cat_api.go:48.2,48.15 1 1
 catapi/controllers/cat_api.go:50.78,53.19 3 1
 catapi/controllers/cat_api.go:53.19,56.6 2 0
