@@ -7,8 +7,8 @@ import (
 
 func init() {
 	// Define routes for the application
-	web.Router("/", &controllers.CatController{}, "get:ServeSingleCatImage")
-	web.Router("/api/catimages", &controllers.CatController{}, "get:ServeMultipleCatImages")
+	web.Router("/", &controllers.CatController{}, "get:GetCatImage")
+	web.Router("/api/catimage", &controllers.CatController{}, "get:GetCatImagesAPI")
 
 	web.Router("/vote", &controllers.CatController{}, "post:CreateVote")
 	web.Router("/votes", &controllers.CatController{}, "get:GetVotes")

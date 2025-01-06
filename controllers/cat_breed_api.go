@@ -3,21 +3,20 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"github.com/beego/beego/v2/server/web"
 )
 
-// Update the caller to pass an HTTP client
+// GetBreeds retrieves all cat breeds
 func (c *CatController) GetBreeds() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
 	apiURL, _ := web.AppConfig.String("catapi.url")
 
-	// Create a channel to receive breeds
 	breedChan := make(chan []Breed)
 	errorChan := make(chan error)
 
-	go FetchBreeds(apiURL, apiKey, &http.Client{}, breedChan, errorChan) // Use FetchBreeds here
+	go FetchBreeds(apiURL, apiKey, &http.Client{}, breedChan, errorChan)
 
 	select {
 	case breeds := <-breedChan:
@@ -36,15 +35,10 @@ func (c *CatController) GetBreedImages() {
 
 	breedID := c.GetString("breed_id")
 
-	// Create a channel to receive breed images
 	imageChan := make(chan []CatImage)
 	errorChan := make(chan error)
 
-	// Use a real HTTP client in production
-	client := &http.Client{}
-
-	// Use the exported FetchBreedImages function
-	go FetchBreedImages(apiURL, apiKey, breedID, client, imageChan, errorChan)
+	go FetchBreedImages(apiURL, apiKey, breedID, &http.Client{}, imageChan, errorChan)
 
 	select {
 	case images := <-imageChan:
@@ -56,77 +50,92 @@ func (c *CatController) GetBreedImages() {
 	c.ServeJSON()
 }
 
-// Fetch Breeds Concurrently
+// FetchBreeds retrieves cat breeds from the API
 func FetchBreeds(apiURL, apiKey string, client HTTPClient, breedChan chan []Breed, errorChan chan error) {
-    reqURL := apiURL + "/breeds"
-    req, _ := http.NewRequest("GET", reqURL, nil)
-    req.Header.Add("x-api-key", apiKey)
+	defer close(breedChan)
+	defer close(errorChan)
 
-    resp, err := client.Do(req)
-    if err != nil {
-        errorChan <- err
-        close(breedChan)
-        close(errorChan)
-        return
-    }
-    defer resp.Body.Close()
-
-    body, _ := ioutil.ReadAll(resp.Body)
-    if resp.StatusCode != 200 {
-        errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
-        close(breedChan)
-        close(errorChan)
-        return
-    }
-
-    var result []Breed
-    err = json.Unmarshal(body, &result)
-    if err != nil {
-        errorChan <- err
-        close(breedChan)
-        close(errorChan)
-        return
-    }
-
-    breedChan <- result
-    close(breedChan)
-    close(errorChan)
-}
-
-// Fetch Breed Images Concurrently
-
-func FetchBreedImages(apiURL, apiKey, breedID string, client HTTPClient, imageChan chan []CatImage, errorChan chan error) {
-	reqURL := apiURL + "/images/search?breed_ids=" + breedID + "&limit=10"
-	req, _ := http.NewRequest("GET", reqURL, nil)
+	reqURL := apiURL + "/breeds"
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error creating request at %s:%d: %v", file, line, err)
+		return
+	}
 	req.Header.Add("x-api-key", apiKey)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		errorChan <- err
-		close(imageChan)
-		close(errorChan)
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error making request at %s:%d: %v", file, line, err)
 		return
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
-		close(imageChan)
-		close(errorChan)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error reading response at %s:%d: %v", file, line, err)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("API returned status code %d at %s:%d: %s", resp.StatusCode, file, line, http.StatusText(resp.StatusCode))
+		return
+	}
+
+	var result []Breed
+	if err := json.Unmarshal(body, &result); err != nil {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error parsing response at %s:%d: %v", file, line, err)
+		return
+	}
+
+	breedChan <- result
+}
+
+// FetchBreedImages retrieves cat images for a specific breed
+func FetchBreedImages(apiURL, apiKey, breedID string, client HTTPClient, imageChan chan []CatImage, errorChan chan error) {
+	defer close(imageChan)
+	defer close(errorChan)
+
+	reqURL := fmt.Sprintf("%s/images/search?breed_ids=%s&limit=10", apiURL, breedID)
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error creating request at %s:%d: %v", file, line, err)
+		return
+	}
+	req.Header.Add("x-api-key", apiKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error making request at %s:%d: %v", file, line, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error reading response at %s:%d: %v", file, line, err)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("API returned status code %d at %s:%d: %s", resp.StatusCode, file, line, http.StatusText(resp.StatusCode))
 		return
 	}
 
 	var result []CatImage
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		errorChan <- err
-		close(imageChan)
-		close(errorChan)
+	if err := json.Unmarshal(body, &result); err != nil {
+		file, line := getCallerInfo()
+		errorChan <- fmt.Errorf("error parsing response at %s:%d: %v", file, line, err)
 		return
 	}
 
 	imageChan <- result
-	close(imageChan)
-	close(errorChan)
 }

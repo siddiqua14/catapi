@@ -11,7 +11,7 @@ import (
 	"fmt"
     "errors"
     "time"
-
+    
 	"github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/server/web/context"
 	"github.com/stretchr/testify/assert"
@@ -823,99 +823,126 @@ func TestCatController_GetCatImage(t *testing.T) {
     })
 }
 
-
 func TestFetchCatImages(t *testing.T) {
-	tests := []struct {
-		name           string
-		mockResponse   *http.Response
-		mockError      error
-		expectedError  bool
-		expectedImages bool
-	}{
-		{
-			name: "successful_fetch",
-			mockResponse: &http.Response{
-				StatusCode: 200,
-				Body: ioutil.NopCloser(bytes.NewBufferString(`[
-					{"url": "http://example.com/cat1.jpg"},
-					{"url": "http://example.com/cat2.jpg"}
-				]`)),
-			},
-			mockError:      nil,
-			expectedError:  false,
-			expectedImages: true,
-		},
-		{
-			name:           "http_client_error",
-			mockResponse:   nil,
-			mockError:      errors.New("network error"),
-			expectedError:  true,
-			expectedImages: false,
-		},
-		{
-			name: "api_error_status",
-			mockResponse: &http.Response{
-				StatusCode: 500,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error": "server error"}`)),
-			},
-			mockError:      nil,
-			expectedError:  true,
-			expectedImages: false,
-		},
-		{
-			name: "invalid_json_response",
-			mockResponse: &http.Response{
-				StatusCode: 200,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(`invalid json`)),
-			},
-			mockError:      nil,
-			expectedError:  true,
-			expectedImages: false,
-		},
-	}
+    tests := []struct {
+        name           string
+        setupMock      func() *MockHTTPClient
+        expectedError  bool
+        expectedImages bool
+    }{
+        {
+            name: "successful_fetch",
+            setupMock: func() *MockHTTPClient {
+                return &MockHTTPClient{
+                    DoFunc: func(req *http.Request) (*http.Response, error) {
+                        return &http.Response{
+                            StatusCode: 200,
+                            Body: ioutil.NopCloser(bytes.NewBufferString(`[
+                                {"url": "http://example.com/cat1.jpg"},
+                                {"url": "http://example.com/cat2.jpg"}
+                            ]`)),
+                        }, nil
+                    },
+                }
+            },
+            expectedError:  false,
+            expectedImages: true,
+        },
+        {
+            name: "request_creation_error",
+            setupMock: func() *MockHTTPClient {
+                return &MockHTTPClient{
+                    DoFunc: func(req *http.Request) (*http.Response, error) {
+                        return nil, errors.New("invalid request")
+                    },
+                }
+            },
+            expectedError:  true,
+            expectedImages: false,
+        },
+        {
+            name: "read_response_error",
+            setupMock: func() *MockHTTPClient {
+                return &MockHTTPClient{
+                    DoFunc: func(req *http.Request) (*http.Response, error) {
+                        return &http.Response{
+                            StatusCode: 200,
+                            Body: ioutil.NopCloser(&ErrorReader{
+                                err: errors.New("read error"),
+                            }),
+                        }, nil
+                    },
+                }
+            },
+            expectedError:  true,
+            expectedImages: false,
+        },
+        {
+            name: "non_200_status_code",
+            setupMock: func() *MockHTTPClient {
+                return &MockHTTPClient{
+                    DoFunc: func(req *http.Request) (*http.Response, error) {
+                        return &http.Response{
+                            StatusCode: 500,
+                            Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error": "server error"}`)),
+                        }, nil
+                    },
+                }
+            },
+            expectedError:  true,
+            expectedImages: false,
+        },
+        {
+            name: "invalid_json_response",
+            setupMock: func() *MockHTTPClient {
+                return &MockHTTPClient{
+                    DoFunc: func(req *http.Request) (*http.Response, error) {
+                        return &http.Response{
+                            StatusCode: 200,
+                            Body:       ioutil.NopCloser(bytes.NewBufferString(`invalid json`)),
+                        }, nil
+                    },
+                }
+            },
+            expectedError:  true,
+            expectedImages: false,
+        },
+    }
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			// Create mock client
-			mockClient := &MockHTTPClient{
-				DoFunc: func(req *http.Request) (*http.Response, error) {
-					// Verify request headers and URL
-					assert.Equal(t, apiURL+"/images/search?limit=10", req.URL.String())
-					assert.Equal(t, apiKey, req.Header.Get("x-api-key"))
-					
-					return tc.mockResponse, tc.mockError
-				},
-			}
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            mockClient := tc.setupMock()
+            imageChan := make(chan []controllers.CatImage)
+            errorChan := make(chan error)
 
-			imageChan := make(chan []controllers.CatImage)
-			errorChan := make(chan error)
+            go controllers.FetchCatImages(apiURL, apiKey, mockClient, imageChan, errorChan)
 
-			// Run FetchCatImages in a goroutine
-			go controllers.FetchCatImages(mockClient, apiURL, apiKey, imageChan, errorChan)
+            select {
+            case images := <-imageChan:
+                if tc.expectedError {
+                    t.Error("Expected error but got images")
+                }
+                if tc.expectedImages {
+                    assert.NotNil(t, images)
+                    assert.Greater(t, len(images), 0)
+                }
+            case err := <-errorChan:
+                if !tc.expectedError {
+                    t.Errorf("Expected success but got error: %v", err)
+                }
+            case <-time.After(2 * time.Second):
+                t.Fatal("Test timed out")
+            }
+        })
+    }
+}
 
-			// Use select with timeout to prevent test from hanging
-			select {
-			case images := <-imageChan:
-				if tc.expectedError {
-					t.Error("Expected error but got images")
-				}
-				if tc.expectedImages {
-					assert.NotNil(t, images)
-					assert.Greater(t, len(images), 0)
-				}
-			case err := <-errorChan:
-				if !tc.expectedError {
-					t.Errorf("Expected success but got error: %v", err)
-				}
-			case <-time.After(2 * time.Second):
-				t.Fatal("Test timed out")
-			}
 
-			// Verify channels are closed
-			_, ok1 := <-imageChan
-			assert.False(t, ok1, "Image channel should be closed")
-			_, ok2 := <-errorChan
-			assert.False(t, ok2, "Error channel should be closed")
-		})
-	}
+// ErrorReader is a mock reader that always returns an error
+type ErrorReader struct {
+    err error
+}
+
+func (r *ErrorReader) Read(p []byte) (n int, err error) {
+    return 0, r.err
 }

@@ -1,0 +1,25 @@
+linters:
+  enable:
+    - gofmt
+    - golint
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - misspell
+
+run:
+  # Look for files in your project structure
+  timeout: 5m
+  skip-dirs:
+    - static
+    - views
+
+# Customize for your cat API project
+issues:
+  exclude-rules:
+    # Exclude some checks from test files
+    - path: _test\.go
+      linters:
+        - dupl

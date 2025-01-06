@@ -3,7 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"fmt"
 	"github.com/beego/beego/v2/server/web"
@@ -49,7 +49,7 @@ func (c *CatController) CreateFavorite() {
     }
     defer resp.Body.Close()
 
-    body, _ := ioutil.ReadAll(resp.Body)
+    body, _ := io.ReadAll(resp.Body)
     if resp.StatusCode != 200 && resp.StatusCode != 201 {
         errMsg := fmt.Sprintf("API returned status code %d: %s", resp.StatusCode, string(body))
         c.Data["json"] = map[string]string{"error": errMsg}
@@ -83,7 +83,7 @@ func (c *CatController) GetFavorites() {
     }
     defer resp.Body.Close()
 
-    body, _ := ioutil.ReadAll(resp.Body)
+    body, _ := io.ReadAll(resp.Body)
 
     if resp.StatusCode != 200 {
         c.Data["json"] = map[string]string{"error": "Failed to fetch favorites"}
@@ -141,7 +141,7 @@ func (c *CatController) DeleteFavorite() {
     
     // Check response
     if resp.StatusCode != 200 {
-        body, _ := ioutil.ReadAll(resp.Body)
+        body, _ := io.ReadAll(resp.Body)
         var result map[string]interface{}
         json.Unmarshal(body, &result)
         c.Data["json"] = map[string]string{"error": fmt.Sprintf("Failed to delete favorite: %v", result)}
